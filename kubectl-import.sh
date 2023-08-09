@@ -7,6 +7,7 @@
 #
 # Maintainer: Rafael Bodill
 #
+# 2023-08-09 - add namespace selection
 # 2022-09-09 - initial version
 set -eu
 
@@ -42,6 +43,15 @@ function current_kubeconfig() {
 function get_all_kubeconfigs() {
 	find -s "$KUBECONFIG_EXTRA_DIR" -type f -execdir echo '{}' ';' \
 		| sed 's,%,/,g;s/.yaml//g'
+}
+
+function select_namespace() {
+	# Use fzf to prompt user to select namespace.
+	kubectl get namespaces \
+		| fzf --exit-0 --ansi --info=right --height=50% --no-preview \
+				--header-lines 1 --margin=1,3,0,3 --scrollbar=▏▕ \
+				--prompt 'Select namespace to use as kubeconfig> ' \
+		| awk '{print $1}'
 }
 
 function select_secret() {
@@ -108,8 +118,11 @@ function main() {
 	__secret_name="${2:-}"
 
 	if [ -z "$__namespace" ]; then
-		echo >&2 'No namespace selected, aborting.'
-		exit 2
+		__namespace="$(select_namespace)"
+		if [ -z "$__namespace" ]; then
+			echo >&2 'No namespace selected, aborting.'
+			exit 2
+		fi
 	fi
 
 	if [ -z "$__secret_name" ]; then
