@@ -1,48 +1,35 @@
 #!/usr/bin/env bash
 #
-# kubectl-import - export Kubernetes secret as kubeconfig file.
+# kubectl-import - merge kubeconfigs stored as Kubernetes secrets or files.
 #
 # Requires yq, https://github.com/mikefarah/yq
-# and fzf, https://github.com/junegunn/fzf
+# fzf, https://github.com/junegunn/fzf
+# and kubectl.
 #
-# Maintainer: Rafael Bodill
-#
+# 2024-09-30 - merge into existing kubeconfig
 # 2023-08-09 - add namespace selection
 # 2022-09-09 - initial version
 set -eu
 
 KUBECONFIG="${KUBECONFIG:=$HOME/.kube/config}"
-KUBECONFIG_EXTRA_DIR="$HOME/.kube/configs"
 
 function usage() {
+	local prog; prog="$(basename "$0")"
 	cat <<EOF
-USAGE: $(basename "$0") [options] [namespace] [secret name]
+USAGE: $prog [--url str|--jsonpath str] [namespace] [secret name]
+       $prog -d|--delete
+       $prog -e|--edit
+       $prog --help
 
 KUBECONFIG="~${KUBECONFIG#"$HOME"}"
-KUBECONFIG_EXTRA_DIR="~${KUBECONFIG_EXTRA_DIR#"$HOME"}"
 
 [options]
-	--url:           apiserver url, e.g. https://localhost:6443
-	-l, --list:      show all available kubeconfigs
+	--url str:       set server url when importing secret, e.g. https://localhost:6443
+	--jsonpath str:  jsonpath for kubectl get secret, default: {.data.kubeconfig\.conf}
+	-d, --delete:    delete context interactively
+	-e, --edit:      edit kubeconfig
 	-h, --help:      this help overview
 EOF
-}
-
-function list_kubeconfigs() {
-	current_kubeconfig
-	echo "kubeconfigs:"
-	get_all_kubeconfigs
-}
-
-function current_kubeconfig() {
-	echo -n "Current kubeconfig: "
-	basename "$(readlink -f "$KUBECONFIG")" | sed 's,%,/,g;s/.yaml//g'
-	echo
-}
-
-function get_all_kubeconfigs() {
-	find -s "$KUBECONFIG_EXTRA_DIR" -type f -execdir echo '{}' ';' \
-		| sed 's,%,/,g;s/.yaml//g'
 }
 
 function select_namespace() {
@@ -50,7 +37,7 @@ function select_namespace() {
 	kubectl get namespaces \
 		| fzf --exit-0 --ansi --info=right --height=50% --no-preview \
 				--header-lines 1 --margin=1,3,0,3 --scrollbar=▏▕ \
-				--prompt 'Select namespace to use as kubeconfig> ' \
+				--prompt 'Select namespace to look for secrets> ' \
 		| awk '{print $1}'
 }
 
@@ -59,7 +46,7 @@ function select_secret() {
 	kubectl get secrets -n "$__namespace" --field-selector type=Opaque \
 		| fzf --exit-0 --ansi --info=right --height=50% --no-preview \
 				--header-lines 1 --margin=1,3,0,3 --scrollbar=▏▕ \
-				--prompt 'Select secret to use as kubeconfig> ' \
+				--prompt 'Select secret to merge in kubeconfig> ' \
 		| awk '{print $1}'
 }
 
@@ -70,42 +57,61 @@ function validate_secret() {
 	fi
 }
 
-function save_secret_as_kubeconfig() {
+function merge_secret() {
 	# Concat final path name
 	local context_name; context_name="$(kubectl config current-context)"
-	local file_name="${context_name}%${__namespace}%${__secret_name}.yaml"
-	local file_path="${KUBECONFIG_EXTRA_DIR}/${file_name}"
-	[ -d "$KUBECONFIG_EXTRA_DIR" ] || mkdir -p "$KUBECONFIG_EXTRA_DIR"
+	local tmpfile; tmpfile="$(mktemp -p "$__cache_dir" -t secret)"
+	# shellcheck disable=SC2064
+	trap "rm -f '$tmpfile'" EXIT
 
 	# Get secret contents, decode and save as file.
 	kubectl get secret "$__secret_name" -n "$__namespace" \
-		-o jsonpath='{.data.kubeconfig\.conf}' | base64 --decode > "${file_path}"
+		-o jsonpath='{.data.kubeconfig\.conf}' | base64 --decode > "${tmpfile}"
 
 	# Update cluster server URL, if user has requested to.
 	if [ -n "$__apiserver_url" ]; then
-		yq -i ".clusters[].cluster.server = \"${__apiserver_url}\"" "${file_path}"
+		yq -i ".clusters[].cluster.server = \"${__apiserver_url}\"" "${tmpfile}"
 	fi
 
 	# Change context name to be more verbose.
-	context_name="${context_name}-${__namespace}-${__secret_name}"
-	yq -i \
-		".contexts[].name = \"$context_name\", .current-context = \"$context_name\"" \
-		"${file_path}"
+	local name="${context_name}-${__namespace}-${__secret_name}"
+	yq -i ".contexts[].name = \"$name\"" "${tmpfile}"
+	yq -i ".contexts[].context.cluster = \"$name\"" "${tmpfile}"
+	yq -i ".contexts[].context.user = \"$name\"" "${tmpfile}"
+	yq -i ".clusters[].name = \"$name\", .users[].name = \"$name\"" "${tmpfile}"
+	merge_and_switch "$tmpfile" "$name"
+}
 
-	# Check if kubectl-switch is present and use to switch to this kubeconfig.
-	if hash kubectl-switch 2>/dev/null; then
-		kubectl-switch "${file_name}"
+function merge_and_switch() {
+	local src="$1"
+	local ctx="$2"
+
+	local merged; merged="$(mktemp -p "$__cache_dir" -t merged)"
+	KUBECONFIG="$KUBECONFIG:$src" kubectl config view --flatten > "$merged"
+
+	# Use new context, ensuring everything is in place, and overwrite kubeconfig.
+	if KUBECONFIG="$merged" kubectl config use-context "$ctx"; then
+		cp -fv "$HOME/.kube/config"{,.bak}
+		mv -f "$merged" "$HOME/.kube/config"
+	else
+		echo >&2 'Failed to merge kubeconfig, aborting.'
+		rm -f "$merged"
 	fi
 }
 
 function main() {
 	local __namespace='' __secret_name='' __apiserver_url=''
+	local __jsonpath='{.data.kubeconfig\.conf}'
+	local __cache_dir="$HOME/.kube/cache/import"
+	local want_delete=0
 	local positional=()
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		--url) shift; __apiserver_url="$1";;
-		-l|--list) list_kubeconfigs; exit;;
+		--jsonpath) shift; __jsonpath="$1";;
+		-d|--delete) want_delete=1;;
+		-e|--edit) "${EDITOR:-vi}" -O "${KUBECONFIG//:/ }"; exit;;
 		-h|--help) usage; exit;;
 		-*) echo "Warning, unrecognized option ${1}" >&2; exit 1;;
 		*) positional+=("${1}");;
@@ -114,6 +120,16 @@ function main() {
 	done
 	set -- "${positional[@]}"
 
+	# Delete context if requested.
+	if [ "$want_delete" = 1 ]; then
+		__context_name="$(kubectl config get-contexts -o name | fzf)"
+		test -n __context_name && kubectl config delete-context "$__context_name"
+		return
+	fi
+
+	mkdir -p "$__cache_dir"
+
+	# Select namespace and secret, validate and merge.
 	__namespace="${1:-}"
 	__secret_name="${2:-}"
 
@@ -134,7 +150,7 @@ function main() {
 	fi
 
 	validate_secret
-	save_secret_as_kubeconfig
+	merge_secret
 }
 
 main "$@"
