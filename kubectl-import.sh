@@ -6,6 +6,7 @@
 # fzf, https://github.com/junegunn/fzf
 # and kubectl.
 #
+# 2024-10-03 - file and stdin support
 # 2024-09-30 - merge into existing kubeconfig
 # 2023-08-09 - add namespace selection
 # 2022-09-09 - initial version
@@ -17,6 +18,8 @@ function usage() {
 	local prog; prog="$(basename "$0")"
 	cat <<EOF
 USAGE: $prog [--url str|--jsonpath str] [namespace] [secret name]
+       $prog [-f|--file str]
+       $prog < <file>
        $prog -d|--delete
        $prog -e|--edit
        $prog --help
@@ -26,6 +29,7 @@ KUBECONFIG="~${KUBECONFIG#"$HOME"}"
 [options]
 	--url str:       set server url when importing secret, e.g. https://localhost:6443
 	--jsonpath str:  jsonpath for kubectl get secret, default: {.data.kubeconfig\.conf}
+	-f, --file str:  import specified kubeconfig file
 	-d, --delete:    delete context interactively
 	-e, --edit:      edit kubeconfig
 	-h, --help:      this help overview
@@ -82,6 +86,21 @@ function merge_secret() {
 	merge_and_switch "$tmpfile" "$name"
 }
 
+function merge_stdin() {
+	local stdin; stdin=$(cat)
+	local tmpfile; tmpfile="$(mktemp -p "$__cache_dir" -t stdin)"
+	# shellcheck disable=SC2064
+	trap "rm -f '$tmpfile'" EXIT
+	echo "$stdin" > "$tmpfile"
+	merge_file "$tmpfile"
+}
+
+function merge_file() {
+	local file="$1"
+	local ctx; ctx="$(KUBECONFIG="$file" kubectl config current-context)"
+	merge_and_switch "$file" "$ctx"
+}
+
 function merge_and_switch() {
 	local src="$1"
 	local ctx="$2"
@@ -103,13 +122,14 @@ function main() {
 	local __namespace='' __secret_name='' __apiserver_url=''
 	local __jsonpath='{.data.kubeconfig\.conf}'
 	local __cache_dir="$HOME/.kube/cache/import"
-	local want_delete=0
+	local want_delete=0 want_file=''
 	local positional=()
 
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		--url) shift; __apiserver_url="$1";;
 		--jsonpath) shift; __jsonpath="$1";;
+		-f|--file) want_file="$1";;
 		-d|--delete) want_delete=1;;
 		-e|--edit) "${EDITOR:-vi}" -O "${KUBECONFIG//:/ }"; exit;;
 		-h|--help) usage; exit;;
@@ -128,6 +148,15 @@ function main() {
 	fi
 
 	mkdir -p "$__cache_dir"
+
+	# Merge kubeconfig from stdin if any.
+	if [ -n "$want_file" ]; then
+		merge_file "$1"
+		return
+	elif test ! -t 0; then
+		merge_stdin
+		return
+	fi
 
 	# Select namespace and secret, validate and merge.
 	__namespace="${1:-}"
