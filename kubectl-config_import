@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# kubectl-import - merge kubeconfigs stored as Kubernetes secrets or files.
+# kubectl-config-import - merge kubeconfigs stored as Kubernetes secrets or files.
 #
 # Requires yq, https://github.com/mikefarah/yq
 # fzf, https://github.com/junegunn/fzf
@@ -121,7 +121,7 @@ function merge_and_switch() {
 function main() {
 	local __namespace='' __secret_name='' __apiserver_url=''
 	local __jsonpath='{.data.kubeconfig\.conf}'
-	local __cache_dir="$HOME/.kube/cache/import"
+	local __cache_dir="$HOME/.kube/cache/config-import"
 	local want_delete=0 want_file=''
 	local positional=()
 
