@@ -10,12 +10,15 @@ use stdin.
 ## Install
 
 - Download:
+
   ```sh
   curl -LO https://github.com/rafi/kubectl-config-import/raw/refs/heads/master/kubectl-config_import
-  chmod ug+x kubectl-config_import.sh
-  mv kubectl-config_import.sh ~/.local/bin/
-  ``````
+  chmod ug+x kubectl-config_import
+  mv kubectl-config_import ~/.local/bin/
+  ```
+
 - Homebrew:
+
   ```sh
   brew install rafi/tap/kubectl-config-import
   ```
@@ -26,7 +29,7 @@ use stdin.
 Command:
   kubectl config-import [--url str|--jsonpath str] [namespace] [secret name]
   kubectl config-import [-f|--file str]
-  kubectl config-import < <file>
+  cat file | kubectl config-import
   kubectl config-import -d|--delete
   kubectl config-import -e|--edit
 
@@ -48,7 +51,7 @@ $ kubectl config-import                                # import secret interacti
 $ kubectl config-import default remote-cluster-secret  # import namespaced secret
 
 $ kubectl config-import -f ~/Downloads/foo  # import from file
-$ kubectl config-import < ~/Downloads/foo   # import from stdin
+$ cat foo | kubectl config-import           # import from stdin
 
 $ kubectl config-import --delete  # delete context (not cluster/user)
 $ kubectl config-import --edit    # edit kubeconfig

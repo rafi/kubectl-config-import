@@ -70,7 +70,7 @@ function merge_secret() {
 
 	# Get secret contents, decode and save as file.
 	kubectl get secret "$__secret_name" -n "$__namespace" \
-		-o jsonpath='{.data.kubeconfig\.conf}' | base64 --decode > "${tmpfile}"
+		-o jsonpath="$__jsonpath" | base64 --decode > "${tmpfile}"
 
 	# Update cluster server URL, if user has requested to.
 	if [ -n "$__apiserver_url" ]; then
@@ -119,9 +119,9 @@ function merge_and_switch() {
 }
 
 function main() {
-	local __namespace='' __secret_name='' __apiserver_url=''
-	local __jsonpath='{.data.kubeconfig\.conf}'
 	local __cache_dir="$HOME/.kube/cache/config-import"
+	local __jsonpath="${KUBECONFIG_IMPORT_JSONPATH:={.data.kubeconfig\.conf\}}"
+	local __namespace='' __secret_name='' __apiserver_url=''
 	local want_delete=0 want_file=''
 	local positional=()
 
@@ -131,7 +131,7 @@ function main() {
 		--jsonpath) shift; __jsonpath="$1";;
 		-f|--file) want_file="$1";;
 		-d|--delete) want_delete=1;;
-		-e|--edit) "${EDITOR:-vi}" -O "${KUBECONFIG//:/ }"; exit;;
+		-e|--edit) IFS=: read -ra f <<< "$KUBECONFIG"; "${EDITOR:-vi}" "${f[@]}"; exit;;
 		-h|--help) usage; exit;;
 		-*) echo "Warning, unrecognized option ${1}" >&2; exit 1;;
 		*) positional+=("${1}");;
