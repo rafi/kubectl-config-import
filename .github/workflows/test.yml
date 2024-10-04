@@ -13,8 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo npm install -g bats
+      - uses: extractions/setup-just@v2
       - name: bats integration tests
-        run: COMMAND=./kubectl-config_import bats test/config-import.bats
+        run: just test-bats
 
   shellcheck:
     name: Shellcheck
@@ -29,11 +30,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: krew-release-bot template
-        run: |-
-          BOT_VERSION=v0.0.46
-          BOT_FILE=krew-release-bot_${BOT_VERSION}_linux_amd64.tar.gz
-          BOT_URL=https://github.com/rajatjindal/krew-release-bot/releases/download/$BOT_VERSION/$BOT_FILE
-          curl -L "$BOT_URL" | tar xzvf - krew-release-bot
-          chmod ug+x krew-release-bot
-          ./krew-release-bot template --tag ${{ github.ref_name }} --template-file .krew.yaml
+      - uses: extractions/setup-just@v2
+      - run: just test-krew-ci
