@@ -1,11 +1,10 @@
-# kubectl-config-import
+# kubectl-config-import [![tests](https://github.com/rafi/kubectl-config-import/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/rafi/kubectl-config-import/actions/workflows/test.yml)
 
-> Merge kubeconfigs stored as Kubernetes secrets or files.
+> Merge kubeconfigs from a file, stdin, or kubernetes secret.
 
-With this plugin you can merge kubeconfigs into your main config. By default, an
-interactive fzf selection for namespace and secret is used for user to select
-and merge as a kubeconfig. Also, using `-f` or `--file` you can merge a file, or
-use stdin.
+By default, an interactive fzf selection for namespace and secret is used for
+user to select and merge as a kubeconfig. Using `-f` or `--file` you can merge a
+file, or simply via stdin.
 
 ## Install
 
@@ -26,17 +25,18 @@ use stdin.
 ## Usage
 
 ```sh
-Command:
-  kubectl config-import [--url str|--jsonpath str] [namespace] [secret name]
-  kubectl config-import [-f|--file str]
-  cat file | kubectl config-import
-  kubectl config-import -d|--delete
-  kubectl config-import -e|--edit
+USAGE:
+  kubectl config-import [--url str|--jsonpath str] [namespace] [secret] : import from secret
+  kubectl config-import [-f|--file str]  : import kubeconfig from file
+  cat <FILE> | kubectl config-import     : import kubeconfig from stdin
+  kubectl config-import -d, --delete     : delete context
+  kubectl config-import -e, --edit       : edit kubeconfig(s)
+  kubectl config-import -h, --help       : show this help overview
 
 [options]
   --url str:       set server url when importing secret, e.g. https://localhost:6443
   --jsonpath str:  jsonpath for kubectl get secret, default: {.data.kubeconfig\.conf}
-  -f, --file str:  import specified kubeconfig file
+  -f, --file FILE: import specified kubeconfig file
   -d, --delete:    delete context interactively
   -e, --edit:      edit kubeconfig
   -h, --help:      this help overview
