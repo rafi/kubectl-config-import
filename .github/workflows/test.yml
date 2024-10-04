@@ -28,10 +28,12 @@ jobs:
     name: Krew template
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: krew-release-bot template
         run: |-
           BOT_VERSION=v0.0.46
           BOT_FILE=krew-release-bot_${BOT_VERSION}_linux_amd64.tar.gz
           BOT_URL=https://github.com/rajatjindal/krew-release-bot/releases/download/$BOT_VERSION/$BOT_FILE
-          curl -L "$BOT_URL" | tar xzv - krew-release-bot
-          krew-release-bot template --tag ${{ github.ref_name }}
+          curl -L "$BOT_URL" | tar xzvf - krew-release-bot
+          chmod ug+x krew-release-bot
+          ./krew-release-bot template --tag ${{ github.ref_name }} --template-file .krew.yaml
