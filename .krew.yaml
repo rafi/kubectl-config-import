@@ -1,0 +1,34 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: config-import
+spec:
+  version: "{{ .TagName }}"
+  shortDescription: >-
+    Merge kubeconfigs from a file, stdin, or kubernetes secret.
+  homepage: https://github.com/rafi/kubectl-config-import
+  description: |
+    By default, an interactive fzf selection for namespace and secret is used
+    for user to select and merge as a kubeconfig. Using `-f` or `--file` you can
+    merge a file, or simply via stdin.
+
+    Examples:
+
+      kubectl config-import default remote-cluster-secret
+      kubectl config-import -f ~/Downloads/foo
+      cat foo | kubectl config-import
+      kubectl config-import --delete
+      kubectl config-import --edit
+  caveats: |
+    Dependencies: fzf, yq
+  platforms:
+  - selector:
+      matchExpressions:
+      - {key: os, operator: In, values: [darwin, linux]}
+    {{addURIAndSha "https://github.com/rafi/kubectl-config-import/archive/refs/tags/{{ .TagName }}.tar.gz" .TagName }}
+    files:
+    - from: "kubectl-config-import-*/kubectl-*"
+      to: .
+    - from: "kubectl-config-import-*/LICENSE*"
+      to: .
+    bin: kubectl-config_import

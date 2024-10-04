@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo npm install -g bats
+      - name: bats integration tests
+        run: COMMAND=./kubectl-config_import bats test/config-import.bats
+
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        uses: ludeeus/action-shellcheck@master
+
+  krew:
+    name: Krew template
+    runs-on: ubuntu-latest
+    steps:
+      - name: krew-release-bot template
+        run: |-
+          BOT_VERSION=v0.0.46
+          BOT_FILE=krew-release-bot_${BOT_VERSION}_linux_amd64.tar.gz
+          BOT_URL=https://github.com/rajatjindal/krew-release-bot/releases/download/$BOT_VERSION/$BOT_FILE
+          curl -L "$BOT_URL" | tar xzv - krew-release-bot
+          krew-release-bot template --tag ${{ github.ref_name }}

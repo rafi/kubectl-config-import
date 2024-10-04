@@ -1,0 +1,26 @@
+# Two contexts (one cluster, 2 users)
+
+apiVersion: v1
+kind: Config
+preferences: {}
+current-context: ""
+clusters:
+- cluster:
+    server: ""
+  name: cluster1
+contexts:
+- context:
+    cluster: cluster1
+    user: user1
+  name: user1@cluster1
+- context:
+    cluster: cluster1
+    user: user2
+  name: user2@cluster1
+users:
+- name: user1
+  user: {}
+- name: user2
+  user: {}
+
+# vim: set ft=yaml ts=2 sw=2 tw=80 et :
