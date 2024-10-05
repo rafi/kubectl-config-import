@@ -22,6 +22,11 @@ file, or simply via stdin.
   brew install rafi/tap/kubectl-config-import
   ```
 
+## Dependencies
+
+- [fzf](https://github.com/junegunn/fzf)
+- [yq](https://github.com/mikefarah/yq) (when importing secret)
+
 ## Usage
 
 ```sh
@@ -45,7 +50,8 @@ USAGE:
 ## Examples
 
 ```sh
-$ kubectl config-import --help   # help screen
+# help screen
+$ kubectl config-import --help
 
 $ kubectl config-import                                # import secret interactively
 $ kubectl config-import default remote-cluster-secret  # import namespaced secret

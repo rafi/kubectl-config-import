@@ -1,8 +1,11 @@
 # config-import justfile
 
-VERSION := "v0.5.1"
+VERSION := `git describe --tags $(git rev-list --tags --max-count=1)`
 SHELLCHECK := env("SHELLCHECK", x"${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin/shellcheck")
 KREW_BOT_VERSION := "v0.0.46"
+
+_default:
+	@just --list
 
 changelog:
 	git-cliff
@@ -17,7 +20,7 @@ test-shell:
 
 test-krew:
 	docker run --rm -v ./.krew.yaml:/tmp/.krew.yaml \
-		ghcr.io/rajatjindal/krew-release-bot:v0.0.46 \
+		ghcr.io/rajatjindal/krew-release-bot:{{ KREW_BOT_VERSION }} \
 		krew-release-bot template --tag {{ VERSION }} --template-file /tmp/.krew.yaml
 
 test-krew-ci:
