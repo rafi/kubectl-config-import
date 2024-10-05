@@ -24,7 +24,7 @@ load common
 
 	run ${COMMAND} -l
 	echo "$output"
-	[ -f "$KUBECONFIG".bak ]
+	[ -f "$KUBECONFIG".bak.0 ]
 	[[ "$output" = *'user3@cluster3'* ]]
 }
 

@@ -60,11 +60,11 @@ function select_secret() {
 		| awk '{print $1}'
 }
 
-current_context() {
+function current_context() {
 	$KUBECTL config view -o=jsonpath='{.current-context}'
 }
 
-get_contexts() {
+function get_contexts() {
 	$KUBECTL config get-contexts -o=name | sort -n
 }
 
@@ -128,8 +128,15 @@ function merge_config() {
 
 	# Use new context, ensuring everything is in place, and overwrite kubeconfig.
 	if KUBECONFIG="$merged" $KUBECTL config view 1>/dev/null; then
-		test -f "${kubeconfigs[0]}" && cp -fv "${kubeconfigs[0]}"{,.bak}
+		# Keep last 3 backups of kubeconfig.
+		test -f "${kubeconfigs[0]}".bak.2 && rm -f "${kubeconfigs[0]}".bak.2
+		for i in 2 1 0; do
+			test -f "${kubeconfigs[0]}.bak.$i" \
+				&& cp -f "${kubeconfigs[0]}.bak".{$i,$((i + 1))}
+		done
+		test -f "${kubeconfigs[0]}" && cp "${kubeconfigs[0]}"{,.bak.0}
 		mv -f "$merged" "${kubeconfigs[0]}"
+		echo "Merged into '${kubeconfigs[0]}' successfully."
 	else
 		echo >&2 'Failed to merge kubeconfig, aborting.'
 		rm -f "$merged"
@@ -188,6 +195,7 @@ function main() {
 
 	# Merge kubeconfig from stdin if any.
 	if [ -n "$want_file" ]; then
+		test -f "$1" || { echo >&2 "File not found: $1"; exit 1; }
 		import_file "$1"
 		return
 	elif test ! -t 0; then
