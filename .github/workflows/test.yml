@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: git fetch --force --prune --tags
       - run: sudo npm install -g bats
       - uses: extractions/setup-just@v2
       - name: bats integration tests
@@ -30,5 +31,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: git fetch --force --prune --tags
       - uses: extractions/setup-just@v2
       - run: just test-krew-ci

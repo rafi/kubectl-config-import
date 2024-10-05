@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Config
 preferences: {}
-current-context: ""
+current-context: user3@cluster3
 clusters:
 - cluster:
     server: ""

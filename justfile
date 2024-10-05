@@ -24,9 +24,10 @@ test-krew:
 		krew-release-bot template --tag {{ VERSION }} --template-file /tmp/.krew.yaml
 
 test-krew-ci:
-	FILE=krew-release-bot_{{ KREW_BOT_VERSION }}_linux_amd64.tar.gz; \
-	BASE_URL=https://github.com/rajatjindal/krew-release-bot/releases/download/{{ KREW_BOT_VERSION }}; \
-	curl -L "$BASE_URL/$FILE" | tar xzvf - krew-release-bot && \
-	chmod ug+x krew-release-bot; \
-	./krew-release-bot template --tag {{ VERSION }} --template-file .krew.yaml; \
-	rm krew-release-bot
+	APP=krew-release-bot; \
+	FILE=${APP}_{{ KREW_BOT_VERSION }}_linux_amd64.tar.gz; \
+	BASE_URL=https://github.com/rajatjindal/$APP/releases/download/{{ KREW_BOT_VERSION }}; \
+	curl -L "$BASE_URL/$FILE" | tar xzvf - $APP && \
+	chmod ug+x $APP; \
+	./$APP template --tag {{ VERSION }} --template-file .krew.yaml; \
+	rm $APP
