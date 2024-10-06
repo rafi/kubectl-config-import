@@ -2,9 +2,10 @@
 
 > Merge kubeconfigs from a file, stdin, or kubernetes secret.
 
-By default, an interactive fzf selection for namespace and secret is used for
-user to select and merge as a kubeconfig. Using `-f` or `--file` you can merge a
-file, or simply via stdin.
+By default, an interactive fzf selection for namespace and Secret is used for
+user to select and merge a Secret as a kubeconfig.
+
+Also, using `-f` or `--file` you can merge a file, or simply via stdin.
 
 ## Install
 
@@ -62,3 +63,68 @@ $ cat foo | kubectl config-import           # import from stdin
 $ kubectl config-import --delete  # delete context (not cluster/user)
 $ kubectl config-import --edit    # edit kubeconfig
 ```
+
+## Import Methods
+
+### File
+
+```sh
+kubectl config-import -f ~/Downloads/foobar.kubeconfig
+```
+
+Will import the specified file into the current kubeconfig.
+
+### Stdin
+
+You can also use stdin to import a kubeconfig:
+
+```sh
+kubectl config-import < ~/Downloads/foobar.kubeconfig
+
+cat ~/Downloads/foobar.kubeconfig | kubectl config-import
+```
+
+### Kubernetes Secret
+
+Kubernetes secret can be imported in different ways:
+
+- Run `kubectl config-import` and select a namespace and secret interactively.
+- Run `kubectl config-import namespace secret` to import a specific secret.
+
+For example, say the following manifest is applied on cluster:
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: mycluster-kubeconfig
+stringData:
+  kubeconfig.conf: |
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - cluster:
+        certificate-authority-data: LS0tLS…
+        server: https://mycluster:6443
+      name: mycluster
+    contexts:
+    - context:
+        cluster: mycluster
+        user: mycluster-user
+      name: mycluster
+    users:
+    - name: mycluster-user
+      user:
+        client-certificate-data: LS0tLS…
+        client-key-data: LS0tLS…
+```
+
+Run `kubectl config-import default mycluster-kubeconfig` to import the
+kubeconfig.
+
+## License
+
+MIT License
+
+Copyright (c) 2024 Rafael Bodill
