@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 #
 # kubectl-config-import - merge kubeconfigs stored as Kubernetes secrets or files.
+# https://github.com/rafi/kubectl-config-import
 #
 # Requires yq, https://github.com/mikefarah/yq
 # fzf, https://github.com/junegunn/fzf
 # and kubectl.
-#
-# 2024-10-03 - file and stdin support
-# 2024-09-30 - merge into existing kubeconfig
-# 2023-08-09 - add namespace selection
-# 2022-09-09 - initial version
+
 set -eou pipefail
 [[ -n ${DEBUG:-} ]] && set -x
 IFS=$'\n\t'

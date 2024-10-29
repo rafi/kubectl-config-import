@@ -1,6 +1,6 @@
 # kubectl-config-import [![tests](https://github.com/rafi/kubectl-config-import/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/rafi/kubectl-config-import/actions/workflows/test.yml)
 
-> Merge kubeconfigs from a file, stdin, or kubernetes secret.
+> Merge kubeconfig's from a file, stdin, or kubernetes secret.
 
 By default, an interactive fzf selection for namespace and Secret is used for
 user to select and merge a Secret as a kubeconfig.
@@ -9,18 +9,27 @@ Also, using `-f` or `--file` you can merge a file, or simply via stdin.
 
 ## Install
 
-- Download:
+Choose one of the following methods:
+
+- Krew:
 
   ```sh
-  curl -LO https://github.com/rafi/kubectl-config-import/raw/refs/heads/master/kubectl-config_import
-  chmod ug+x kubectl-config_import
-  mv kubectl-config_import ~/.local/bin/
+  kubectl krew install config-import
   ```
 
 - Homebrew:
 
   ```sh
   brew install rafi/tap/kubectl-config-import
+  ```
+
+- Download:
+
+  ```sh
+  curl -LO https://github.com/rafi/kubectl-config-import/raw/refs/heads/master/kubectl-config_import
+  chmod ug+x kubectl-config_import
+  mv kubectl-config_import ~/.local/bin/
+  # ensure ~/.local/bin is in your PATH
   ```
 
 ## Dependencies
@@ -88,7 +97,8 @@ cat ~/Downloads/foobar.kubeconfig | kubectl config-import
 
 Kubernetes secret can be imported in different ways:
 
-- Run `kubectl config-import` and select a namespace and secret interactively.
+- Run `kubectl config-import` and interactively select a namespace and secret.
+- Run `kubectl config-import namespace` to interactively select a secret.
 - Run `kubectl config-import namespace secret` to import a specific secret.
 
 For example, say the following manifest is applied on cluster:
@@ -121,7 +131,7 @@ stringData:
 ```
 
 Run `kubectl config-import default mycluster-kubeconfig` to import the
-kubeconfig.
+kubeconfig store in the `kubeconfig.conf` key.
 
 ## License
 
