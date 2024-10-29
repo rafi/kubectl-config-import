@@ -32,3 +32,6 @@ jobs:
         with:
           body_path: ${{ steps.git-cliff.outputs.changelog }}
           files: kubectl-config_import
+
+      - name: Publish Krew
+        uses: rajatjindal/krew-release-bot@v0.0.46
