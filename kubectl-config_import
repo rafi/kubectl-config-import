@@ -190,7 +190,7 @@ function main() {
 		return
 	fi
 
-	mkdir -p "$__cache_dir"
+	test -d "$__cache_dir" || mkdir -p "$__cache_dir"
 
 	# Merge kubeconfig from stdin if any.
 	if [ -n "$want_file" ]; then
