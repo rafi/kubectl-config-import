@@ -23,6 +23,13 @@ load common
 	[ "$status" -eq 1 ]
 }
 
+@test "should fail if stdin is malformed" {
+	use_config config1
+	run bash -c "echo '' | ${COMMAND}"
+	echo "$output"
+	[ "$status" -eq 1 ]
+}
+
 @test "merge two config files and ensure backup" {
 	use_config config1
 	run ${COMMAND} -f "$BATS_TEST_DIRNAME"/testdata/config3

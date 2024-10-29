@@ -103,6 +103,11 @@ function import_secret() {
 
 function import_stdin() {
 	local stdin; stdin=$(cat)
+	if [ -z "$stdin" ]; then
+		echo >&2 'No input from stdin, aborting.'
+		exit 1
+	fi
+
 	local tmpfile; tmpfile="$(mktemp -p "$__cache_dir" -t stdin.XXXXX)"
 	# shellcheck disable=SC2064
 	trap "rm -f '$tmpfile'" EXIT
@@ -122,6 +127,10 @@ function import_file() {
 
 function merge_config() {
 	local src="$1"
+	if [ ! -f "$src" ] || [ ! -s "$src" ]; then
+		echo >&2 'Failed to read kubeconfig, aborting.'
+		exit 1
+	fi
 
 	local merged; merged="$(mktemp -p "$__cache_dir" -t merged.XXXXX)"
 	KUBECONFIG="$KUBECONFIG:$src" $KUBECTL config view --flatten > "$merged"
