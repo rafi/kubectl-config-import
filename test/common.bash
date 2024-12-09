@@ -6,6 +6,15 @@ setup() {
 	export TEMP_HOME
 	export HOME=$TEMP_HOME
 	export KUBECONFIG="${TEMP_HOME}/config"
+
+	if hash kubectl 2>/dev/null; then
+		export KUBECTL=kubectl
+	elif hash kubectl.exe 2>/dev/null; then
+		export KUBECTL=kubectl.exe
+	else
+		echo >&2 "kubectl is not installed"
+		exit 1
+	fi
 }
 
 # bats teardown function

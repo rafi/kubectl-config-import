@@ -6,7 +6,7 @@ preferences: {}
 current-context: user2@cluster1
 clusters:
 - cluster:
-    server: ""
+    server: config2
   name: cluster1
 contexts:
 - context:
@@ -19,8 +19,10 @@ contexts:
   name: user2@cluster1
 users:
 - name: user1
-  user: {}
+  user:
+    username: user1-config2
 - name: user2
-  user: {}
+  user:
+    username: user2-config2
 
 # vim: set ft=yaml ts=2 sw=2 tw=80 et :

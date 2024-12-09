@@ -48,15 +48,38 @@ load common
 	echo "$output"
 	[ "$status" -eq 0 ]
 
-	run ${COMMAND} -l
+	run kubectl config get-contexts -o name
 	echo "$output"
 	[ "$status" -eq 0 ]
 	[[ "$output" = *'user3@cluster3'* ]]
 
-	run ${COMMAND} -c
+	run kubectl config current-context
 	echo "$output"
 	[ "$status" -eq 0 ]
-	[[ "$output" = *'user3@cluster3'* ]]
+	[ "$output" = 'user3@cluster3' ]
+}
+
+@test "merge from file and ensure overwrite precedence" {
+	use_config config2
+	run ${COMMAND} -f "$BATS_TEST_DIRNAME"/testdata/config1
+	echo "$output"
+	[ "$status" -eq 0 ]
+
+	run kubectl config get-contexts -o name
+	echo "$output"
+	[ "$status" -eq 0 ]
+	[[ "$output" = *'user1@cluster1'* ]]
+	[[ "$output" = *'user2@cluster1'* ]]
+
+	run kubectl config current-context
+	echo "$output"
+	[ "$status" -eq 0 ]
+	[ "$output" = 'user1@cluster1' ]
+
+	run kubectl config view -o jsonpath='{.users[?(@.name == "user1")].user.username}'
+	echo "$output"
+	[ "$status" -eq 0 ]
+	[ "$output" = 'user1-config1' ]
 }
 
 @test "delete context" {

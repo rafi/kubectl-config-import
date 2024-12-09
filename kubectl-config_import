@@ -130,7 +130,7 @@ function merge_config() {
 	fi
 
 	local merged; merged="$(mktemp -p "$__cache_dir" -t merged.XXXXX)"
-	KUBECONFIG="$KUBECONFIG:$src" $KUBECTL config view --flatten > "$merged"
+	KUBECONFIG="$src:$KUBECONFIG" $KUBECTL config view --flatten > "$merged"
 
 	# Use new context, ensuring everything is in place, and overwrite kubeconfig.
 	if KUBECONFIG="$merged" $KUBECTL config view 1>/dev/null; then

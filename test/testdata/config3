@@ -6,7 +6,7 @@ preferences: {}
 current-context: user3@cluster3
 clusters:
 - cluster:
-    server: ""
+    server: config3
   name: cluster3
 contexts:
 - context:
